@@ -116,7 +116,7 @@ input[type="text"]:focus{outline:none;border-color:#3b82f6}
 <div class="status" id="statusMsg"></div>
 </div>
 <script>
-var fc='',fn='',cb=null,ps={volumes:[]};
+var fc='',fn='',cb=null,pvs={volumes:[]};
 var ub=document.getElementById('uploadBox'),fi=document.getElementById('fileInput'),bt=document.getElementById('bookTitle'),ba=document.getElementById('bookAuthor'),
 cp=document.getElementById('coverPreview'),cs=document.getElementById('coverStatus'),fcb=document.getElementById('fetchCoverBtn'),ccb=document.getElementById('clearCoverBtn'),
 cfi=document.getElementById('coverFileInput'),cub=document.getElementById('clearUploadBtn'),cvb=document.getElementById('convertBtn'),
@@ -173,19 +173,19 @@ z.folder('META-INF').file('container.xml','<?xml version="1.0" encoding="UTF-8"?
 var o=z.folder('OEBPS'),co={compression:'DEFLATE',compressionOptions:{level:9}};
 o.file('style.css','body{font-family:"Songti SC","Noto Serif CJK SC",serif;line-height:1.8;margin:0;padding:0}h1{text-align:center;font-size:1.5em;margin:2em 0 1em;page-break-before:always}h2{text-align:center;font-size:1.2em;margin:1.5em 0 .8em;page-break-before:always}p{text-indent:2em;margin:.3em 0}img.cover{max-width:100%;height:auto;display:block;margin:0 auto}',co);
 var ch='';if(cb){var ext=(cb.type||'image/jpeg').split('/')[1]||'jpg';ch='images/cover.'+ext;o.folder('images').file('cover.'+ext,cb,co)}
-var ps=[],np=[],po=0;
-if(ch){o.file('cover.xhtml','<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml"><head><title>封面</title><link rel="stylesheet" href="style.css" type="text/css"/></head><body><div style="text-align:center;padding:2em"><img class="cover" src="'+ch+'" alt="封面"/></div></body></html>',co);ps.push({id:'cover',href:'cover.xhtml',title:'封面'})}
+var pgs=[],np=[],po=0;
+if(ch){o.file('cover.xhtml','<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml"><head><title>封面</title><link rel="stylesheet" href="style.css" type="text/css"/></head><body><div style="text-align:center;padding:2em"><img class="cover" src="'+ch+'" alt="封面"/></div></body></html>',co);pgs.push({id:'cover',href:'cover.xhtml',title:'封面'})}
 var th='<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml"><head><title>目录</title><link rel="stylesheet" href="style.css" type="text/css"/></head><body><h2>目录</h2><nav epub:type="toc">';
 s.volumes.forEach(function(v,vi){var vid='v'+vi;th+='<p style="text-indent:0;font-weight:bold;margin:.5em 0"><a href="'+vid+'.xhtml">'+eH(v.title)+'</a></p>';
 v.chapters.forEach(function(c,ci){var cid='c'+vi+'_'+ci;th+='<p style="text-indent:1.5em;font-size:.9em;margin:.2em 0"><a href="'+cid+'.xhtml">'+eH(c.title)+'</a></p>'})});th+='</nav></body></html>';
-o.file('toc.xhtml',th,co);ps.push({id:'toc',href:'toc.xhtml',title:'目录'});
+o.file('toc.xhtml',th,co);pgs.push({id:'toc',href:'toc.xhtml',title:'目录'});
 s.volumes.forEach(function(v,vi){var vid='v'+vi;
-o.file(vid+'.xhtml','<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml"><head><title>'+eH(v.title)+'</title><link rel="stylesheet" href="style.css" type="text/css"/></head><body><h1>'+eH(v.title)+'</h1></body></html>',co);ps.push({id:vid,href:vid+'.xhtml',title:v.title});po++;
+o.file(vid+'.xhtml','<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml"><head><title>'+eH(v.title)+'</title><link rel="stylesheet" href="style.css" type="text/css"/></head><body><h1>'+eH(v.title)+'</h1></body></html>',co);pgs.push({id:vid,href:vid+'.xhtml',title:v.title});po++;
 np.push('<navPoint id="nav'+vid+'" playOrder="'+po+'"><navLabel><text>'+eX(v.title)+'</text></navLabel><content src="'+vid+'.xhtml"/></navPoint>');
-v.chapters.forEach(function(c,ci){var cid='c'+vi+'_'+ci,ps=c.content.split(/\\n+/).filter(function(l){return l.trim()}).map(function(l){return'<p>'+eH(l.trim())+'</p>'}).join('');
-o.file(cid+'.xhtml','<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml"><head><title>'+eH(c.title)+'</title><link rel="stylesheet" href="style.css" type="text/css"/></head><body><h2>'+eH(c.title)+'</h2>'+ps+'</body></html>',co);ps.push({id:cid,href:cid+'.xhtml',title:c.title});po++;
+v.chapters.forEach(function(c,ci){var cid='c'+vi+'_'+ci,paras=c.content.split(/\\n+/).filter(function(l){return l.trim()}).map(function(l){return'<p>'+eH(l.trim())+'</p>'}).join('');
+o.file(cid+'.xhtml','<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml"><head><title>'+eH(c.title)+'</title><link rel="stylesheet" href="style.css" type="text/css"/></head><body><h2>'+eH(c.title)+'</h2>'+paras+'</body></html>',co);pgs.push({id:cid,href:cid+'.xhtml',title:c.title});po++;
 np.push('<navPoint id="nav'+cid+'" playOrder="'+po+'"><navLabel><text>'+eX(v.title)+' - '+eX(c.title)+'</text></navLabel><content src="'+cid+'.xhtml"/></navPoint>')})});
-var uid='urn:uuid:'+crypto.randomUUID(),mn='',spn='';ps.forEach(function(p){mn+='<item id="'+p.id+'" href="'+p.href+'" media-type="application/xhtml+xml"/>';spn+='<itemref idref="'+p.id+'"/>'});
+var uid='urn:uuid:'+crypto.randomUUID(),mn='',spn='';pgs.forEach(function(p){mn+='<item id="'+p.id+'" href="'+p.href+'" media-type="application/xhtml+xml"/>';spn+='<itemref idref="'+p.id+'"/>'});
 if(ch){mn+='<item id="cover-image" href="'+ch+'" media-type="'+(cb?cb.type:'image/jpeg')+'" properties="cover-image"/>'}mn+='<item id="css" href="style.css" media-type="text/css"/>';
 o.file('content.opf','<?xml version="1.0" encoding="UTF-8"?><package xmlns="http://www.idpf.org/2007/opf" unique-identifier="book-id" version="3.0"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>'+eX(m.title)+'</dc:title><dc:creator>'+eX(m.author)+'</dc:creator><dc:language>zh-CN</dc:language><dc:identifier id="book-id">'+uid+'</dc:identifier><meta name="cover" content="cover-image"/></metadata><manifest>'+mn+'</manifest><spine>'+spn+'</spine></package>',co);
 o.file('toc.ncx','<?xml version="1.0" encoding="UTF-8"?><ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1"><head><meta name="dtb:uid" content="'+uid+'"/></head><docTitle><text>'+eX(m.title)+'</text></docTitle><navMap>'+np.join('')+'</navMap></ncx>',co);
@@ -204,16 +204,16 @@ if(!ea){var bm=on.match(/[bB][yY]\\s+([^\\s《]+)/);if(bm)ea=bm[1].trim()}
 if(!ea){var dm=on.match(/[-–]\\s*([^\\s《]+)$/);if(dm&&dm[1].length<10)ea=dm[1].trim()}
 if(!et){var cn=on.replace(/作者[：:]\\s*[^\\s《]+/g,'').replace(/[-_【】\\[\\]]/g,' ').replace(/\\s+/g,' ').trim();et=cn||on}
 fn=on;bt.value=et;ba.value=ea;
-try{ss('正在读取文件...');fc=await dc(f);if(!fc.trim())throw new Error('文件内容为空');ps=pS(fc);sCP(ps);
-var tc=ps.volumes.reduce(function(s,v){return s+v.chapters.length},0);ss('已加载: '+f.name+' · '+ps.volumes.length+'卷 '+tc+'章');cvb.disabled=false}
+try{ss('正在读取文件...');fc=await dc(f);if(!fc.trim())throw new Error('文件内容为空');pvs=pS(fc);sCP(pvs);
+var tc=pvs.volumes.reduce(function(s,v){return s+v.chapters.length},0);ss('已加载: '+f.name+' · '+pvs.volumes.length+'卷 '+tc+'章');cvb.disabled=false}
 catch(e){ss('读取失败: '+e.message,1);cl.style.display='none'}}
 
 fcb.addEventListener('click',function(){fC(bt.value.trim())});
 ccb.addEventListener('click',function(){cb=null;cp.style.backgroundImage='';cp.textContent='📷';cs.textContent='未获取'});
 cvb.addEventListener('click',async function(){if(!fc){ss('请先上传TXT文件',1);return}
-var t=bt.value.trim()||fn||'未命名',a=ba.value.trim()||'未知作者';if(!ps.volumes.length)ps=pS(fc);
-var tc=ps.volumes.reduce(function(s,v){return s+v.chapters.length},0);ss('正在生成EPUB ('+ps.volumes.length+'卷 '+tc+'章)...');sp(20);cvb.disabled=true;
-try{var eb=await gE({title:t,author:a},ps);sp(90);var u=URL.createObjectURL(eb),d=document.createElement('a');d.href=u;d.download=t.replace(/[\\\\/:*?"<>|]/g,'_')+'.epub';document.body.appendChild(d);d.click();document.body.removeChild(d);URL.revokeObjectURL(u);sp(100);ss('✅ 生成成功！'+ps.volumes.length+'卷 '+tc+'章');setTimeout(function(){sp(0)},1500)}
+var t=bt.value.trim()||fn||'未命名',a=ba.value.trim()||'未知作者';if(!pvs.volumes.length)pvs=pS(fc);
+var tc=pvs.volumes.reduce(function(s,v){return s+v.chapters.length},0);ss('正在生成EPUB ('+pvs.volumes.length+'卷 '+tc+'章)...');sp(20);cvb.disabled=true;
+try{var eb=await gE({title:t,author:a},pvs);sp(90);var u=URL.createObjectURL(eb),d=document.createElement('a');d.href=u;d.download=t.replace(/[\\\\/:*?"<>|]/g,'_')+'.epub';document.body.appendChild(d);d.click();document.body.removeChild(d);URL.revokeObjectURL(u);sp(100);ss('✅ 生成成功！'+pvs.volumes.length+'卷 '+tc+'章');setTimeout(function(){sp(0)},1500)}
 catch(e){ss('生成失败: '+e.message,1);sp(0)}finally{cvb.disabled=false}});
 cvb.disabled=true;ss('请上传TXT文件开始');
 </script>
