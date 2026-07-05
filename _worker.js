@@ -164,7 +164,7 @@ try{var t=new TextDecoder('big5',{fatal:true}).decode(u);eb.textContent='Big5';e
 eb.textContent='UTF-8';eb.style.display='inline-block';return new TextDecoder('utf-8').decode(u)}
 
 function pS(t){var ct=t.replace(/\\r\\n/g,'\\n').replace(/\\r/g,'\\n'),ls=ct.split('\\n'),
-vp=/^第[零一二三四五六七八九十百千万\\d]+卷\\s+.+$/,cp=/^第[零一二三四五六七八九十百千万\\d]+章\\s+.+$/,sp=/^(楔子|引子|序章|序言|序|前言|后记|尾声|终章|番外|附录|补遗)\\s*.*$/,hs=[];
+vp=/^第[零一二三四五六七八九十百千万\\d]+卷\\s+.+$/,cp=/^第[零一二三四五六七八九十百千万\\d]+章\\s*.*$/,sp=/^(楔子|引子|序章|序言|序|前言|后记|尾声|终章|番外|附录|补遗)\\s*.*$/,hs=[];
 ls.forEach(function(l,i){var tr=l.trim();if(!tr)return;
 if(vp.test(tr))hs.push({title:tr,li:i,lv:1,tp:'volume'});else if(cp.test(tr))hs.push({title:tr,li:i,lv:2,tp:'chapter'});else if(sp.test(tr))hs.push({title:tr,li:i,lv:2,tp:'special'})});
 if(!hs.length)return{volumes:[{title:'正文',chapters:[{title:'全文',content:ct.trim()}]}]};
@@ -244,7 +244,7 @@ pgs.forEach(function(p){
   spine+='<itemref idref="'+p.id+'"/>';
 });
 manifest+='<item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>';
-spine+='<itemref idref="nav"/>'; // 注意：此行导致 KOReader 不兼容
+spine+='<itemref idref="nav"/>';
 if(coverHref){
   manifest+='<item id="cover-image" href="'+coverHref+'" media-type="'+coverMediaType+'" properties="cover-image"/>';
 }
