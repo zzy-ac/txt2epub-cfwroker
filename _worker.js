@@ -191,25 +191,20 @@ catch(e){ss('封面获取失败: '+e.message,1);sp(0)}finally{fcb.disabled=false
 async function gE(m,s,f){if(typeof JSZip==='undefined'){await new Promise(function(r,j){var sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';sc.onload=r;sc.onerror=function(){j(new Error('JSZip加载失败'))};document.head.appendChild(sc)})}
 var z=new JSZip(),kp=f==='kepub';
 z.file('mimetype','application/epub+zip',{compression:'STORE'});
-z.folder('META-INF').file('container.xml','<?xml version="1.0" encoding="UTF-8"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>',{compression:'STORE'});
-z.folder('META-INF').file('calibre_bookmarks.txt','',{compression:'STORE'});
-z.folder('META-INF').file('com.apple.ibooks.display-options.xml','<?xml version="1.0" encoding="UTF-8"?><display_options><platform name="*"><option name="specified-fonts">true</option></platform></display_options>',{compression:'STORE'});
-var oebps=z.folder('OEBPS'),co={compression:'DEFLATE',compressionOptions:{level:9}};
-var stylesFolder=oebps.folder('styles'),textFolder=oebps.folder('text'),mediaFolder=oebps.folder('media');
+z.folder('META-INF').file('container.xml','<?xml version="1.0" encoding="UTF-8"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="EPUB/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>',{compression:'STORE'});
+var epub=z.folder('EPUB'),co={compression:'DEFLATE',compressionOptions:{level:9}};
+var stylesFolder=epub.folder('styles'),textFolder=epub.folder('text'),mediaFolder=epub.folder('media');
 var css='body{padding:3% 2%;margin-top:3%;margin-bottom:3%;margin-left:1%;margin-right:1%;line-height:1em;text-align:justify}h1,h2{margin:1em 0 5em;line-height:120%;text-align:left;font-family:STSong,serif,"Times New Roman","方正书宋","宋体","FZPingXianYaSongS-R-GB","zw";padding:15px 12px 1em 5px;border-style:none none dotted none;border-width:0 0 1px 0;page-break-before:always}h1.title{text-align:center}p.author{text-align:center}p{margin:.5em 0;line-height:1em;text-indent:2em}hr{border:0;background-color:#BEBEBE;height:1.5px;margin:2% 0}img.cover{max-width:100%;height:auto;display:block;margin:0 auto}';
 if(kp){css+='div.koboSpan{display:inline}span.koboHighlight{background:transparent!important}';stylesFolder.file('style.kepub.css',css,co)}else{stylesFolder.file('style.css',css,co)}
 var csHref=kp?'styles/style.kepub.css':'styles/style.css';
-
-var coverHref='', coverMediaType='';
+var coverHref='',coverMediaType='';
 if(cb){
-  // 根据实际图片类型确定扩展名，避免强制 jpg 导致 Plasma 不识别
   var rawExt = (cb.type||'image/jpeg').split('/')[1];
   if(rawExt === 'jpeg') rawExt = 'jpg';
   coverHref = 'media/cover.' + rawExt;
   coverMediaType = cb.type || 'image/jpeg';
   mediaFolder.file('cover.' + rawExt, cb, { compression: 'STORE' });
 }
-
 var pgs=[],navMap=[],chNum=0;
 function pad(n){return n<10?'00'+n:(n<100?'0'+n:''+n)}
 if(coverHref){
@@ -241,23 +236,21 @@ navMap.forEach(function(vol){
   navHtml+='</ol></li>';
 });
 navHtml+='</ol></nav></body></html>';
-oebps.file('nav.xhtml',navHtml,co);
-
+epub.file('nav.xhtml',navHtml,co);
 var uid='urn:uuid:'+crypto.randomUUID();
-var manifest='',spine='',guide='';
+var manifest='',spine='';
 pgs.forEach(function(p){
   manifest+='<item id="'+p.id+'" href="'+p.href+'" media-type="application/xhtml+xml"/>';
   spine+='<itemref idref="'+p.id+'"/>';
 });
 manifest+='<item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>';
+spine+='<itemref idref="nav"/>'; // 注意：此行导致 KOReader 不兼容
 if(coverHref){
   manifest+='<item id="cover-image" href="'+coverHref+'" media-type="'+coverMediaType+'" properties="cover-image"/>';
-  guide+='<reference type="cover" title="封面" href="text/cover.xhtml"/>';
 }
 manifest+='<item id="css" href="'+csHref+'" media-type="text/css"/>';
-var opf='<?xml version="1.0" encoding="UTF-8"?><package xmlns="http://www.idpf.org/2007/opf" unique-identifier="book-id" version="3.0"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>'+eX(m.title)+'</dc:title><dc:creator>'+eX(m.author)+'</dc:creator><dc:language>zh-CN</dc:language><dc:identifier id="book-id">'+uid+'</dc:identifier><meta name="cover" content="cover-image"/>'+(kp?'<meta property="rendition:spread">auto</meta>':'')+'</metadata><manifest>'+manifest+'</manifest><spine'+(kp?' page-progression-direction="default"':'')+'>'+spine+'</spine>'+(guide?'<guide>'+guide+'</guide>':'')+'</package>';
-oebps.file('content.opf',opf,co);
-
+var opf='<?xml version="1.0" encoding="UTF-8"?><package xmlns="http://www.idpf.org/2007/opf" unique-identifier="book-id" version="3.0"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>'+eX(m.title)+'</dc:title><dc:creator>'+eX(m.author)+'</dc:creator><dc:language>zh-CN</dc:language><dc:identifier id="book-id">'+uid+'</dc:identifier><meta name="cover" content="cover-image"/>'+(kp?'<meta property="rendition:spread">auto</meta>':'')+'</metadata><manifest>'+manifest+'</manifest><spine'+(kp?' page-progression-direction="default"':'')+'>'+spine+'</spine></package>';
+epub.file('content.opf',opf,co);
 var ncx='<?xml version="1.0" encoding="UTF-8"?><ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1"><head><meta name="dtb:uid" content="'+uid+'"/><meta name="dtb:depth" content="1"/><meta name="dtb:totalPageCount" content="0"/><meta name="dtb:maxPageNumber" content="0"/>'+(coverHref?'<meta name="cover" content="cover-image"/>':'')+'</head><docTitle><text>'+eX(m.title)+'</text></docTitle><navMap>';
 var npId=0;
 if(coverHref){
@@ -271,7 +264,7 @@ navMap.forEach(function(vol){
   ncx+='</navPoint>';
 });
 ncx+='</navMap></ncx>';
-oebps.file('toc.ncx',ncx,co);
+epub.file('toc.ncx',ncx,co);
 return await z.generateAsync({type:'blob',mimeType:'application/epub+zip',compression:'DEFLATE',compressionOptions:{level:9,memLevel:9,windowBits:15},streamFiles:true,platform:'UNIX'})}
 
 ub.addEventListener('click',function(){fi.click()});
