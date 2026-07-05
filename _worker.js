@@ -86,7 +86,7 @@ input[type="text"]:focus{outline:none;border-color:#3b82f6}
 <body>
 <div class="container">
 <h1>📖 TXT转电子书</h1>
-<p class="subtitle">自动识别卷/章 · 多级标题 · 支持 EPUB / KEPUB / KFX</p>
+<p class="subtitle">自动识别卷/章 · 多级标题 · 支持 EPUB / KEPUB / KFX / AZW3</p>
 <div class="upload-box" id="uploadBox">
 <div style="font-size:36px;margin-bottom:8px">📂</div>
 <div style="font-weight:500">点击或拖拽上传 TXT 文件</div>
@@ -102,6 +102,7 @@ input[type="text"]:focus{outline:none;border-color:#3b82f6}
 <button class="format-btn active" data-format="epub">📱 EPUB</button>
 <button class="format-btn" data-format="kepub">📗 KEPUB</button>
 <button class="format-btn" data-format="kfx">📖 KFX</button>
+<button class="format-btn" data-format="azw3">📘 AZW3</button>
 </div>
 <div class="cover-row">
 <div class="cover-preview" id="coverPreview">📷</div>
@@ -125,13 +126,13 @@ input[type="text"]:focus{outline:none;border-color:#3b82f6}
 <button class="btn btn-primary" id="convertBtn">🚀 生成并下载</button>
 <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
 <div class="status" id="statusMsg"></div>
-<div class="footer-note">KFX 由 <a href="https://github.com/zacharydenton/boko" target="_blank">boko</a> 提供转换支持</div>
+<div class="footer-note">KFX/AZW3 由 <a href="https://github.com/zacharydenton/boko" target="_blank">boko</a> 提供转换支持</div>
 </div>
 <script type="module">
-import init, { epub_to_kfx } from './pkg/boko.js';
+import init, { epub_to_kfx, epub_to_azw3 } from './pkg/boko.js';
 
 let bokoReady = false;
-try { await init(); bokoReady = true; } catch (e) { console.warn('boko 加载失败，KFX 不可用'); }
+try { await init(); bokoReady = true; } catch (e) { console.warn('boko 加载失败，KFX/AZW3 转换不可用'); }
 
 var fc='',fn='',cb=null,pvs={volumes:[]},fmt='epub';
 var ub=document.getElementById('uploadBox'),fi=document.getElementById('fileInput'),bt=document.getElementById('bookTitle'),ba=document.getElementById('bookAuthor'),
@@ -292,12 +293,15 @@ var tc=pvs.volumes.reduce(function(s,v){return s+v.chapters.length},0);
 var fext='.epub', flbl='EPUB';
 if(fmt==='kepub'){fext='.kepub.epub';flbl='KEPUB'}
 else if(fmt==='kfx'){fext='.kfx';flbl='KFX'}
+else if(fmt==='azw3'){fext='.azw3';flbl='AZW3'}
 ss('正在生成'+flbl+' ('+pvs.volumes.length+'卷 '+tc+'章)...');sp(20);cvb.disabled=true;
 try{
   var eb=await gE({title:t,author:a},pvs,fmt);
-  if(bokoReady && fmt==='kfx'){
+  if(bokoReady && (fmt==='kfx' || fmt==='azw3')){
     var inputData = new Uint8Array(await eb.arrayBuffer());
-    var outputData = epub_to_kfx(inputData);
+    var outputData;
+    if(fmt==='kfx') outputData = epub_to_kfx(inputData);
+    else outputData = epub_to_azw3(inputData);
     eb = new Blob([outputData], {type:'application/octet-stream'});
   }
   sp(90);var u=URL.createObjectURL(eb),d=document.createElement('a');d.href=u;d.download=t.replace(/[\\\\/:*?"<>|]/g,'_')+fext;document.body.appendChild(d);d.click();document.body.removeChild(d);URL.revokeObjectURL(u);sp(100);ss('✅ '+flbl+'生成成功！'+pvs.volumes.length+'卷 '+tc+'章');setTimeout(function(){sp(0)},1500)}
