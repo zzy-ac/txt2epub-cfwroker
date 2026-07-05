@@ -191,45 +191,43 @@ catch(e){ss('封面获取失败: '+e.message,1);sp(0)}finally{fcb.disabled=false
 async function gE(m,s,f){if(typeof JSZip==='undefined'){await new Promise(function(r,j){var sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';sc.onload=r;sc.onerror=function(){j(new Error('JSZip加载失败'))};document.head.appendChild(sc)})}
 var z=new JSZip(),kp=f==='kepub';
 z.file('mimetype','application/epub+zip',{compression:'STORE'});
-z.folder('META-INF').file('container.xml','<?xml version="1.0" encoding="UTF-8"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="EPUB/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>');
+z.folder('META-INF').file('container.xml','<?xml version="1.0" encoding="UTF-8"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="EPUB/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>',{compression:'STORE'});
+z.folder('META-INF').file('calibre_bookmarks.txt','',{compression:'STORE'});
+z.folder('META-INF').file('com.apple.ibooks.display-options.xml','<?xml version="1.0" encoding="UTF-8"?><display_options><platform name="*"><option name="specified-fonts">true</option></platform></display_options>',{compression:'STORE'});
 var epub=z.folder('EPUB'),co={compression:'DEFLATE',compressionOptions:{level:9}};
 var stylesFolder=epub.folder('styles'),textFolder=epub.folder('text'),mediaFolder=epub.folder('media');
 var css='body{padding:3% 2%;margin-top:3%;margin-bottom:3%;margin-left:1%;margin-right:1%;line-height:1em;text-align:justify}h1,h2{margin:1em 0 5em;line-height:120%;text-align:left;font-family:STSong,serif,"Times New Roman","方正书宋","宋体","FZPingXianYaSongS-R-GB","zw";padding:15px 12px 1em 5px;border-style:none none dotted none;border-width:0 0 1px 0;page-break-before:always}h1.title{text-align:center}p.author{text-align:center}p{margin:.5em 0;line-height:1em;text-indent:2em}hr{border:0;background-color:#BEBEBE;height:1.5px;margin:2% 0}img.cover{max-width:100%;height:auto;display:block;margin:0 auto}';
 if(kp){css+='div.koboSpan{display:inline}span.koboHighlight{background:transparent!important}';stylesFolder.file('style.kepub.css',css,co)}else{stylesFolder.file('style.css',css,co)}
 var csHref=kp?'styles/style.kepub.css':'styles/style.css';
-
-var coverHref='',coverId='';
-if(cb){var ext=(cb.type||'image/jpeg').split('/')[1]||'jpg';coverHref='media/cover.'+ext;coverId='cover-image';mediaFolder.file('cover.'+ext,cb,co)}
-
-var pages=[], navMap=[], chNum=0;
+var coverHref='',coverMediaType='';
+if(cb){var ext=(cb.type||'image/jpeg').split('/')[1]||'jpg';coverHref='media/cover.'+ext;coverMediaType=cb.type||'image/jpeg';mediaFolder.file('cover.'+ext,cb,co)}
+var pgs=[],navMap=[],chNum=0;
 function pad(n){return n<10?'00'+n:(n<100?'0'+n:''+n)}
-
+// 添加封面页面（如果存在封面图片）
 if(coverHref){
-  var coverHtml='<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml"><head><title>封面</title><link rel="stylesheet" href="'+csHref+'" type="text/css"/></head><body><div style="text-align:center;padding:2em"><img class="cover" src="'+coverHref+'" alt="封面"/></div></body></html>';
-  var coverFile='cover.xhtml';
-  textFolder.file(coverFile,coverHtml,co);
-  pages.push({id:'cover',href:'text/'+coverFile,title:'封面'});
+  // 封面图片在 text/ 目录的父级 media/，因此需要 ../media/cover.xxx
+  var coverImgSrc = '../' + coverHref;  // 例如 "../media/cover.jpg"
+  var coverHtml='<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml"><head><title>封面</title><link rel="stylesheet" href="../'+csHref+'" type="text/css"/></head><body><div style="text-align:center;padding:2em"><img class="cover" src="'+coverImgSrc+'" alt="封面"/></div></body></html>';
+  textFolder.file('cover.xhtml',coverHtml,co);
+  pgs.push({id:'cover',href:'text/cover.xhtml',title:'封面'});
 }
-
 s.volumes.forEach(function(volume,vIndex){
   chNum++; var volId='vol-'+vIndex, volFile='ch'+pad(chNum)+'.xhtml';
   var volHtml='<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml"><head><title>'+eH(volume.title)+'</title><link rel="stylesheet" href="../'+csHref+'" type="text/css"/></head><body><h1 id="'+volId+'">'+eH(volume.title)+'</h1></body></html>';
   textFolder.file(volFile,volHtml,co);
-  pages.push({id:'vol'+vIndex,href:'text/'+volFile,title:volume.title});
-  var volNav={id:'nav-vol'+vIndex,text:volume.title,src:'text/'+volFile+'#'+volId,children:[]};
-
+  pgs.push({id:'vol'+vIndex,href:'text/'+volFile,title:volume.title});
+  var volNav={text:volume.title,src:'text/'+volFile+'#'+volId,children:[]};
   volume.chapters.forEach(function(chapter,cIndex){
     chNum++; var chId='ch-'+vIndex+'-'+cIndex, chFile='ch'+pad(chNum)+'.xhtml';
     var paras=chapter.content.split(/\\n+/).filter(function(l){return l.trim()}).map(function(l){return'<p>'+(kp?'<span class="koboSpan">'+eH(l.trim())+'</span>':eH(l.trim()))+'</p>'}).join('');
     var chHtml='<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml"><head><title>'+eH(chapter.title)+'</title><link rel="stylesheet" href="../'+csHref+'" type="text/css"/></head><body><h2 id="'+chId+'">'+eH(chapter.title)+'</h2>'+paras+'</body></html>';
     textFolder.file(chFile,chHtml,co);
-    pages.push({id:'ch'+vIndex+'_'+cIndex,href:'text/'+chFile,title:chapter.title});
-    volNav.children.push({id:'nav-ch'+vIndex+'-'+cIndex,text:chapter.title,src:'text/'+chFile+'#'+chId});
+    pgs.push({id:'ch'+vIndex+'_'+cIndex,href:'text/'+chFile,title:chapter.title});
+    volNav.children.push({text:chapter.title,src:'text/'+chFile+'#'+chId});
   });
   navMap.push(volNav);
 });
-
-// nav.xhtml 放在 EPUB/ 根下，CSS 路径为 styles/style.css
+// nav.xhtml 放在 EPUB/ 根
 var navHtml='<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"><head><title>目录</title><link rel="stylesheet" href="'+csHref+'" type="text/css"/></head><body><nav epub:type="toc"><h1>目录</h1><ol>';
 navMap.forEach(function(vol){
   navHtml+='<li><a href="'+vol.src+'">'+eH(vol.text)+'</a><ol>';
@@ -238,18 +236,31 @@ navMap.forEach(function(vol){
 });
 navHtml+='</ol></nav></body></html>';
 epub.file('nav.xhtml',navHtml,co);
-pages.push({id:'nav',href:'nav.xhtml',title:'目录'});
 
 var uid='urn:uuid:'+crypto.randomUUID();
-var manifest='', spine='';
-pages.forEach(function(p){manifest+='<item id="'+p.id+'" href="'+p.href+'" media-type="application/xhtml+xml"/>'; spine+='<itemref idref="'+p.id+'"/>'});
-if(coverHref){manifest+='<item id="cover-image" href="'+coverHref+'" media-type="'+(cb?cb.type:'image/jpeg')+'" properties="cover-image"/>'}
+var manifest='',spine='',guide='';
+pgs.forEach(function(p){
+  manifest+='<item id="'+p.id+'" href="'+p.href+'" media-type="application/xhtml+xml"/>';
+  spine+='<itemref idref="'+p.id+'"/>';
+});
+// 导航文档
+manifest+='<item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>';
+// 封面图片
+if(coverHref){
+  manifest+='<item id="cover-image" href="'+coverHref+'" media-type="'+coverMediaType+'" properties="cover-image"/>';
+  // 添加 guide（EPUB2 兼容）
+  guide+='<reference type="cover" title="封面" href="text/cover.xhtml"/>';
+}
 manifest+='<item id="css" href="'+csHref+'" media-type="text/css"/>';
-var opf='<?xml version="1.0" encoding="UTF-8"?><package xmlns="http://www.idpf.org/2007/opf" unique-identifier="book-id" version="3.0"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>'+eX(m.title)+'</dc:title><dc:creator>'+eX(m.author)+'</dc:creator><dc:language>zh-CN</dc:language><dc:identifier id="book-id">'+uid+'</dc:identifier><meta name="cover" content="cover-image"/>'+(kp?'<meta property="rendition:spread">auto</meta>':'')+'</metadata><manifest>'+manifest+'</manifest><spine>'+(kp?'<spine page-progression-direction="default">':'<spine>')+spine+'</spine></package>';
+var opf='<?xml version="1.0" encoding="UTF-8"?><package xmlns="http://www.idpf.org/2007/opf" unique-identifier="book-id" version="3.0"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>'+eX(m.title)+'</dc:title><dc:creator>'+eX(m.author)+'</dc:creator><dc:language>zh-CN</dc:language><dc:identifier id="book-id">'+uid+'</dc:identifier><meta name="cover" content="cover-image"/>'+(kp?'<meta property="rendition:spread">auto</meta>':'')+'</metadata><manifest>'+manifest+'</manifest><spine'+(kp?' page-progression-direction="default"':'')+'>'+spine+'</spine>'+(guide?'<guide>'+guide+'</guide>':'')+'</package>';
 epub.file('content.opf',opf,co);
 
 var ncx='<?xml version="1.0" encoding="UTF-8"?><ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1"><head><meta name="dtb:uid" content="'+uid+'"/><meta name="dtb:depth" content="1"/><meta name="dtb:totalPageCount" content="0"/><meta name="dtb:maxPageNumber" content="0"/>'+(coverHref?'<meta name="cover" content="cover-image"/>':'')+'</head><docTitle><text>'+eX(m.title)+'</text></docTitle><navMap>';
 var npId=0;
+// 添加封面导航点（可选）
+if(coverHref){
+  npId++; ncx+='<navPoint id="navPoint-'+npId+'" playOrder="'+npId+'"><navLabel><text>封面</text></navLabel><content src="text/cover.xhtml"/></navPoint>';
+}
 navMap.forEach(function(vol){
   npId++; ncx+='<navPoint id="navPoint-'+npId+'" playOrder="'+npId+'"><navLabel><text>'+eX(vol.text)+'</text></navLabel><content src="'+vol.src+'"/>';
   vol.children.forEach(function(ch){
@@ -259,7 +270,6 @@ navMap.forEach(function(vol){
 });
 ncx+='</navMap></ncx>';
 epub.file('toc.ncx',ncx,co);
-
 return await z.generateAsync({type:'blob',mimeType:'application/epub+zip',compression:'DEFLATE',compressionOptions:{level:9,memLevel:9,windowBits:15},streamFiles:true,platform:'UNIX'})}
 
 ub.addEventListener('click',function(){fi.click()});
