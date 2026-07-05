@@ -1,0 +1,29 @@
+{
+  "name": "boko",
+  "type": "module",
+  "description": "Fast ebook conversion library for EPUB and Kindle formats",
+  "version": "0.3.0",
+  "license": "GPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zacharydenton/boko"
+  },
+  "files": [
+    "boko_bg.wasm",
+    "boko.js",
+    "boko.d.ts"
+  ],
+  "main": "boko.js",
+  "homepage": "https://github.com/zacharydenton/boko",
+  "types": "boko.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ],
+  "keywords": [
+    "ebook",
+    "epub",
+    "mobi",
+    "azw3",
+    "kindle"
+  ]
+}
