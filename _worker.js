@@ -200,13 +200,17 @@ var css='body{padding:3% 2%;margin-top:3%;margin-bottom:3%;margin-left:1%;margin
 if(kp){css+='div.koboSpan{display:inline}span.koboHighlight{background:transparent!important}';stylesFolder.file('style.kepub.css',css,co)}else{stylesFolder.file('style.css',css,co)}
 var csHref=kp?'styles/style.kepub.css':'styles/style.css';
 var coverHref='',coverMediaType='';
-if(cb){var ext=(cb.type||'image/jpeg').split('/')[1]||'jpg';coverHref='media/cover.'+ext;coverMediaType=cb.type||'image/jpeg';mediaFolder.file('cover.'+ext,cb,co)}
+if(cb){
+  var ext=(cb.type||'image/jpeg').split('/')[1]||'jpg';
+  coverHref='media/cover.'+ext;
+  coverMediaType=cb.type||'image/jpeg';
+  // ★ 封面图片必须使用 STORE 压缩，否则 Plasma 无法直接读取
+  mediaFolder.file('cover.'+ext,cb,{compression:'STORE'});
+}
 var pgs=[],navMap=[],chNum=0;
 function pad(n){return n<10?'00'+n:(n<100?'0'+n:''+n)}
-// 添加封面页面（如果存在封面图片）
 if(coverHref){
-  // 封面图片在 text/ 目录的父级 media/，因此需要 ../media/cover.xxx
-  var coverImgSrc = '../' + coverHref;  // 例如 "../media/cover.jpg"
+  var coverImgSrc = '../' + coverHref;  // text/ 下引用 media/ 图片
   var coverHtml='<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml"><head><title>封面</title><link rel="stylesheet" href="../'+csHref+'" type="text/css"/></head><body><div style="text-align:center;padding:2em"><img class="cover" src="'+coverImgSrc+'" alt="封面"/></div></body></html>';
   textFolder.file('cover.xhtml',coverHtml,co);
   pgs.push({id:'cover',href:'text/cover.xhtml',title:'封面'});
@@ -227,7 +231,6 @@ s.volumes.forEach(function(volume,vIndex){
   });
   navMap.push(volNav);
 });
-// nav.xhtml 放在 EPUB/ 根
 var navHtml='<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"><head><title>目录</title><link rel="stylesheet" href="'+csHref+'" type="text/css"/></head><body><nav epub:type="toc"><h1>目录</h1><ol>';
 navMap.forEach(function(vol){
   navHtml+='<li><a href="'+vol.src+'">'+eH(vol.text)+'</a><ol>';
@@ -243,12 +246,9 @@ pgs.forEach(function(p){
   manifest+='<item id="'+p.id+'" href="'+p.href+'" media-type="application/xhtml+xml"/>';
   spine+='<itemref idref="'+p.id+'"/>';
 });
-// 导航文档
 manifest+='<item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>';
-// 封面图片
 if(coverHref){
   manifest+='<item id="cover-image" href="'+coverHref+'" media-type="'+coverMediaType+'" properties="cover-image"/>';
-  // 添加 guide（EPUB2 兼容）
   guide+='<reference type="cover" title="封面" href="text/cover.xhtml"/>';
 }
 manifest+='<item id="css" href="'+csHref+'" media-type="text/css"/>';
@@ -257,7 +257,6 @@ epub.file('content.opf',opf,co);
 
 var ncx='<?xml version="1.0" encoding="UTF-8"?><ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1"><head><meta name="dtb:uid" content="'+uid+'"/><meta name="dtb:depth" content="1"/><meta name="dtb:totalPageCount" content="0"/><meta name="dtb:maxPageNumber" content="0"/>'+(coverHref?'<meta name="cover" content="cover-image"/>':'')+'</head><docTitle><text>'+eX(m.title)+'</text></docTitle><navMap>';
 var npId=0;
-// 添加封面导航点（可选）
 if(coverHref){
   npId++; ncx+='<navPoint id="navPoint-'+npId+'" playOrder="'+npId+'"><navLabel><text>封面</text></navLabel><content src="text/cover.xhtml"/></navPoint>';
 }
