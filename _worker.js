@@ -191,7 +191,6 @@ catch(e){ss('封面获取失败: '+e.message,1);sp(0)}finally{fcb.disabled=false
 async function gE(m,s,f){if(typeof JSZip==='undefined'){await new Promise(function(r,j){var sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';sc.onload=r;sc.onerror=function(){j(new Error('JSZip加载失败'))};document.head.appendChild(sc)})}
 var z=new JSZip(),kp=f==='kepub';
 z.file('mimetype','application/epub+zip',{compression:'STORE'});
-// 使用 OEBPS 作为内容根目录，保持兼容性
 z.folder('META-INF').file('container.xml','<?xml version="1.0" encoding="UTF-8"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>',{compression:'STORE'});
 z.folder('META-INF').file('calibre_bookmarks.txt','',{compression:'STORE'});
 z.folder('META-INF').file('com.apple.ibooks.display-options.xml','<?xml version="1.0" encoding="UTF-8"?><display_options><platform name="*"><option name="specified-fonts">true</option></platform></display_options>',{compression:'STORE'});
@@ -203,10 +202,12 @@ var csHref=kp?'styles/style.kepub.css':'styles/style.css';
 
 var coverHref='', coverMediaType='';
 if(cb){
-  var ext = 'jpg';
-  coverHref = 'media/cover.' + ext;
-  coverMediaType = 'image/jpeg';
-  mediaFolder.file('cover.' + ext, cb, { compression: 'STORE' });
+  // 根据实际图片类型确定扩展名，避免强制 jpg 导致 Plasma 不识别
+  var rawExt = (cb.type||'image/jpeg').split('/')[1];
+  if(rawExt === 'jpeg') rawExt = 'jpg';
+  coverHref = 'media/cover.' + rawExt;
+  coverMediaType = cb.type || 'image/jpeg';
+  mediaFolder.file('cover.' + rawExt, cb, { compression: 'STORE' });
 }
 
 var pgs=[],navMap=[],chNum=0;
